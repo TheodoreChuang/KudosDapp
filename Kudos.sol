@@ -11,27 +11,23 @@ contract Kudos {
     }
 
     // Name of the space
-    // string public name;
+    string public name;
     // Name of Kudos (ex. tacos) ¿can handle emojis?
-    // string public unitOfAccount;
+    string public unitOfAccount;
     // Maximum number of tacos an user can tip within a cyclePeriod
-    uint256 public tipLimit = 3;
+    uint256 public tipLimit;
     // Period of time before the tipLimit resets (in days)
-    uint256 public cyclePeriod = 1;
-
-    // testing - ASC order
-    uint256[] public contractLatest;
-
+    uint256 public cyclePeriod;
     address public admin;
 
     address[] private userIndex;
     mapping(address => UserStruct) private userStructs;
 
-    event Tip(
-        // address indexed _from,
-        // address _to, // indexed ?
-        // uint8 _amount,
-        uint256 indexed _timestamp // indexed ?
+    event LogTip(
+        address indexed _from,
+        address _to,
+        uint8 _amount,
+        uint256 _timestamp
     );
 
     event LogNewUser(
@@ -40,12 +36,29 @@ contract Kudos {
         string username
     );
 
-    constructor() public {
+    constructor(
+        string memory _name,
+        string memory _unitOfAccount,
+        uint256 _tipLimit,
+        uint256 _cyclePeriod
+    ) public {
         admin = msg.sender;
-        // TODO add other parameters
 
-        for (uint8 i = 0; i < tipLimit; i++) {
-            contractLatest.push(block.timestamp - cyclePeriod * 1 weeks);
+        // require(_name.length > 0);
+
+        name = _name;
+        unitOfAccount = _unitOfAccount;
+        tipLimit = _tipLimit;
+        cyclePeriod = _cyclePeriod;
+
+        // if (_name.length == 0) {
+        //     name = 'taco';
+        // }
+        if (_tipLimit == 0) {
+            tipLimit = 5;
+        }
+        if (_cyclePeriod == 0) {
+            cyclePeriod = 1;
         }
     }
 
@@ -65,35 +78,48 @@ contract Kudos {
     // function viewUsers() public {}
 
     /// @notice
-    /// @param
-    function tipUser(uint8 _amount) public {
-        // function tipUser(address _to, uint8 _amount) public {
-        // require(_to != msg.sender, "Cannot tip yourself");
+    /// @param _amount Amount of kudos
+    function tipUser(address _to, uint8 _amount) public {
+        require(isUser(_to), "Recipient user does not exist");
+        require(_to != msg.sender, "Cannot tip yourself");
 
         require(_amount <= tipLimit, "Cannot tip more than the limit");
+        require(_amount > 0, "Cannot tip less than zero");
 
         for (uint8 a = 0; a < _amount; a++) {
-            require(_passTipLimit(contractLatest[a]), "Cannot tip yet");
+            require(
+                _passTipLimit(userStructs[msg.sender].latestTips[a]),
+                "Cannot tip yet"
+            );
         }
 
         // send tip
+        userStructs[_to].kudos = userStructs[_to].kudos + _amount;
 
-        uint256[] memory updatedTimestamp = new uint256[](tipLimit);
-
+        // Update senders latest tips timestamps
         for (uint8 l = 0; l < tipLimit; l++) {
             if (l < (tipLimit - _amount)) {
-                updatedTimestamp[l] = contractLatest[_amount + l];
+                userStructs[msg.sender].latestTips[l] = userStructs[msg.sender]
+                    .latestTips[_amount + l];
             } else {
-                updatedTimestamp[l] = block.timestamp;
+                userStructs[msg.sender].latestTips[l] = block.timestamp;
             }
         }
 
-        contractLatest = updatedTimestamp;
-        // emit Tip(msg.sender, _to, _amount, block.timestamp);
+        emit LogTip(msg.sender, _to, _amount, block.timestamp);
     }
 
-    function contractLenght() public view returns (uint256) {
-        return contractLatest.length;
+    function getSpaceSummary()
+        public
+        view
+        returns (
+            string memory,
+            string memory,
+            uint256,
+            uint256
+        )
+    {
+        return (name, unitOfAccount, tipLimit, cyclePeriod);
     }
 
     /**
