@@ -81,3 +81,5 @@ Each `space` can create their own `taco` or whatever currency (ERC20?) or points
 
 - React + MetaMask
 - Extension + ???
+
+- https://medium.com/javascript-in-plain-english/deploy-serverless-app-with-next-js-8-aws-lambda-and-circleci-part-1-a0c9c6ea7c57

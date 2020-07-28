@@ -1,0 +1,7 @@
+# Smart Contracts
+ethereum/build/*
+
+# Client App
+.next
+
+.env
